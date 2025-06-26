@@ -27,6 +27,10 @@ use std::{
 #[cfg(windows)]
 use winapi::um::winuser::WHEEL_DELTA;
 
+use serialport;
+use std::env;
+use std::io::{self, Write};
+
 const INVALID_CURSOR_POS: i32 = i32::MIN;
 const INVALID_DISPLAY_IDX: i32 = -1;
 
@@ -435,6 +439,20 @@ fn run_window_focus(sp: EmptyExtraFieldService, state: &mut StateWindowFocus) ->
 enum KeysDown {
     RdevKey(RawKey),
     EnigoKey(u64),
+}
+
+// 全局串口变量
+lazy_static! {
+    static ref PORT: Mutex<Box<dyn serialport::SerialPort>> = Mutex::new(
+        serialport::new("COM2", 115200)
+            .timeout(Duration::from_millis(1000))
+            .open()
+            .expect("无法打开串口")
+    );
+}
+// 全局鼠标状态
+lazy_static! {
+    static ref MOUSE_DATA: Mutex<[u8; 4]> = Mutex::new([0; 4]);
 }
 
 lazy_static::lazy_static! {
@@ -895,6 +913,13 @@ fn get_last_input_cursor_pos() -> (i32, i32) {
 
 // check if mouse is moved by the controlled side user to make controlled side has higher mouse priority than remote.
 fn active_mouse_(conn: i32) -> bool {
+
+    // 打开串口 (配置可以提取到函数外)
+    let mut port = serialport::new("COM2", 115200)
+        .timeout(Duration::from_millis(1000))
+        .open()
+        .expect("无法打开串口");
+
     true
     /* this method is buggy (not working on macOS, making fast moving mouse event discarded here) and added latency (this is blocking way, must do in async way), so we disable it for now
     // out of time protection
@@ -979,6 +1004,23 @@ pub fn handle_pointer_(evt: &PointerDeviceEvent, conn: i32) {
     }
 }
 
+pub fn build_frame(custom_bytes: [u8; 4]) -> [u8; 6] {
+    let mut frame = [0u8; 6];
+    frame[0] = 0x5A; // 固定头字节
+    frame[1..5].copy_from_slice(&custom_bytes); // 设置第2-5字节
+    frame[5] = frame.iter().take(5).fold(0u8, |sum, &x| sum.wrapping_add(x)); // 计算校验和
+    frame
+}
+
+/// 使用全局串口发送数据帧
+pub fn send_frame(frame: &[u8]) -> io::Result<()> {
+    let mut port = PORT.lock().unwrap();
+    port.write_all(frame)?;
+    port.flush()?;
+    //println!("已发送数据: {:02X?}", frame);
+    Ok(())
+}
+
 pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     if !active_mouse_(conn) {
         return;
@@ -1018,8 +1060,14 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
         }
     }
     match evt_type {
-        MOUSE_TYPE_MOVE => {
-            en.mouse_move_to(evt.x, evt.y);
+    	MOUSE_TYPE_MOVE => {
+            //en.mouse_move_to(evt.x, evt.y);
+			let mut mouse_data = MOUSE_DATA.lock().unwrap();
+			mouse_data[1] = evt.x;
+			mouse_data[2] = evt.y;
+			let frame = build_frame(*mouse_data)
+			send_frame(&frame)?;
+			
             *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                 conn,
                 time: get_time(),
@@ -1029,37 +1077,61 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
         }
         MOUSE_TYPE_DOWN => match buttons {
             MOUSE_BUTTON_LEFT => {
-                allow_err!(en.mouse_down(MouseButton::Left));
+                //allow_err!(en.mouse_down(MouseButton::Left));
+				let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				mouse_data[0] = mouse_data[0] | 0x01;
+				let frame = build_frame(*mouse_data)
+				send_frame(&frame)?;
             }
             MOUSE_BUTTON_RIGHT => {
-                allow_err!(en.mouse_down(MouseButton::Right));
+                //allow_err!(en.mouse_down(MouseButton::Right));
+				let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				mouse_data[0] = mouse_data[0] | 0x02;
+				let frame = build_frame(*mouse_data)
+				send_frame(&frame)?;			
             }
             MOUSE_BUTTON_WHEEL => {
-                allow_err!(en.mouse_down(MouseButton::Middle));
+                //allow_err!(en.mouse_down(MouseButton::Middle));
+				let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				mouse_data[0] = mouse_data[0] | 0x04;
+				let frame = build_frame(*mouse_data)
+				send_frame(&frame)?;				
             }
             MOUSE_BUTTON_BACK => {
-                allow_err!(en.mouse_down(MouseButton::Back));
+                //allow_err!(en.mouse_down(MouseButton::Back));
             }
             MOUSE_BUTTON_FORWARD => {
-                allow_err!(en.mouse_down(MouseButton::Forward));
+                //allow_err!(en.mouse_down(MouseButton::Forward));
             }
             _ => {}
         },
         MOUSE_TYPE_UP => match buttons {
             MOUSE_BUTTON_LEFT => {
-                en.mouse_up(MouseButton::Left);
+                //en.mouse_up(MouseButton::Left);
+				let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				mouse_data[0] = mouse_data[0] & 0xFE;
+				let frame = build_frame(*mouse_data)
+				send_frame(&frame)?;
             }
             MOUSE_BUTTON_RIGHT => {
-                en.mouse_up(MouseButton::Right);
+                //en.mouse_up(MouseButton::Right);
+				let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				mouse_data[0] = mouse_data[0] & 0xFD;
+				let frame = build_frame(*mouse_data)
+				send_frame(&frame)?;				
             }
             MOUSE_BUTTON_WHEEL => {
-                en.mouse_up(MouseButton::Middle);
+                //en.mouse_up(MouseButton::Middle);
+				let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				mouse_data[0] = mouse_data[0] & 0xFB;
+				let frame = build_frame(*mouse_data)
+				send_frame(&frame)?;
             }
             MOUSE_BUTTON_BACK => {
-                en.mouse_up(MouseButton::Back);
+                //en.mouse_up(MouseButton::Back);
             }
             MOUSE_BUTTON_FORWARD => {
-                en.mouse_up(MouseButton::Forward);
+                //en.mouse_up(MouseButton::Forward);
             }
             _ => {}
         },
@@ -1107,10 +1179,14 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             #[cfg(not(target_os = "macos"))]
             {
                 if y != 0 {
-                    en.mouse_scroll_y(y);
+                    //en.mouse_scroll_y(y);
+					let mut mouse_data = MOUSE_DATA.lock().unwrap();
+					mouse_data[3] = y;
+					let frame = build_frame(*mouse_data)
+					send_frame(&frame)?;
                 }
                 if x != 0 {
-                    en.mouse_scroll_x(x);
+                    //en.mouse_scroll_x(x);
                 }
             }
         }
