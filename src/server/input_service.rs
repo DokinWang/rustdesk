@@ -27,6 +27,7 @@ use std::{
 #[cfg(windows)]
 use winapi::um::winuser::WHEEL_DELTA;
 
+use std::convert::TryInto;
 use serialport;
 use std::env;
 use std::io::{self, Write};
@@ -442,7 +443,7 @@ enum KeysDown {
 }
 
 // 全局串口变量
-lazy_static! {
+lazy_static::lazy_static! {
     static ref PORT: Mutex<Box<dyn serialport::SerialPort>> = Mutex::new(
         serialport::new("COM2", 115200)
             .timeout(Duration::from_millis(1000))
@@ -451,7 +452,7 @@ lazy_static! {
     );
 }
 // 全局鼠标状态
-lazy_static! {
+lazy_static::lazy_static! {
     static ref MOUSE_DATA: Mutex<[u8; 4]> = Mutex::new([0; 4]);
 }
 
@@ -1063,10 +1064,10 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     	MOUSE_TYPE_MOVE => {
             //en.mouse_move_to(evt.x, evt.y);
 			let mut mouse_data = MOUSE_DATA.lock().unwrap();
-			mouse_data[1] = evt.x;
-			mouse_data[2] = evt.y;
-			let frame = build_frame(*mouse_data)
-			send_frame(&frame)?;
+			mouse_data[1] = evt.x.try_into().unwrap_or(0);;
+			mouse_data[2] = evt.y.try_into().unwrap_or(0);;
+			let frame = build_frame(*mouse_data);
+			send_frame(&frame);
 			
             *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                 conn,
@@ -1080,22 +1081,22 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                 //allow_err!(en.mouse_down(MouseButton::Left));
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] | 0x01;
-				let frame = build_frame(*mouse_data)
-				send_frame(&frame)?;
+				let frame = build_frame(*mouse_data);
+				send_frame(&frame);
             }
             MOUSE_BUTTON_RIGHT => {
                 //allow_err!(en.mouse_down(MouseButton::Right));
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] | 0x02;
-				let frame = build_frame(*mouse_data)
-				send_frame(&frame)?;			
+				let frame = build_frame(*mouse_data);
+				send_frame(&frame);			
             }
             MOUSE_BUTTON_WHEEL => {
                 //allow_err!(en.mouse_down(MouseButton::Middle));
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] | 0x04;
-				let frame = build_frame(*mouse_data)
-				send_frame(&frame)?;				
+				let frame = build_frame(*mouse_data);
+				send_frame(&frame);				
             }
             MOUSE_BUTTON_BACK => {
                 //allow_err!(en.mouse_down(MouseButton::Back));
@@ -1110,22 +1111,22 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                 //en.mouse_up(MouseButton::Left);
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] & 0xFE;
-				let frame = build_frame(*mouse_data)
-				send_frame(&frame)?;
+				let frame = build_frame(*mouse_data);
+				send_frame(&frame);
             }
             MOUSE_BUTTON_RIGHT => {
                 //en.mouse_up(MouseButton::Right);
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] & 0xFD;
-				let frame = build_frame(*mouse_data)
-				send_frame(&frame)?;				
+				let frame = build_frame(*mouse_data);
+				send_frame(&frame);				
             }
             MOUSE_BUTTON_WHEEL => {
                 //en.mouse_up(MouseButton::Middle);
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] & 0xFB;
-				let frame = build_frame(*mouse_data)
-				send_frame(&frame)?;
+				let frame = build_frame(*mouse_data);
+				send_frame(&frame);
             }
             MOUSE_BUTTON_BACK => {
                 //en.mouse_up(MouseButton::Back);
@@ -1181,9 +1182,9 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                 if y != 0 {
                     //en.mouse_scroll_y(y);
 					let mut mouse_data = MOUSE_DATA.lock().unwrap();
-					mouse_data[3] = y;
-					let frame = build_frame(*mouse_data)
-					send_frame(&frame)?;
+					mouse_data[3] = y.try_into().unwrap_or(0);;
+					let frame = build_frame(*mouse_data);
+					send_frame(&frame);
                 }
                 if x != 0 {
                     //en.mouse_scroll_x(x);
