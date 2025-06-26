@@ -1,11 +1,11 @@
 [package]
-name = "FuckDuoyi"
+name = "rustdesk"
 version = "1.4.0"
-authors = ["FuckDuoyi <info@FuckDuoyi.com>"]
+authors = ["rustdesk <info@rustdesk.com>"]
 edition = "2021"
 build= "build.rs"
-description = "FuckDuoyi Remote Desktop"
-default-run = "FuckDuoyi"
+description = "RustDesk Remote Desktop"
+default-run = "rustdesk"
 rust-version = "1.75"
 
 [lib]
@@ -192,9 +192,9 @@ exclude = ["vdi/host", "examples/custom_plugin"]
 
 [package.metadata.winres]
 LegalCopyright = "Copyright © 2025 Purslane Ltd. All rights reserved."
-ProductName = "FuckDuoyi"
-FileDescription = "FuckDuoyi Remote Desktop"
-OriginalFilename = "FuckDuoyi.exe"
+ProductName = "RustDesk"
+FileDescription = "RustDesk Remote Desktop"
+OriginalFilename = "rustdesk.exe"
 
 [target.'cfg(target_os="windows")'.build-dependencies]
 winres = "0.1"
