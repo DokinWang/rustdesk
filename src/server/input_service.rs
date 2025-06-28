@@ -668,7 +668,9 @@ pub fn is_left_up(evt: &MouseEvent) -> bool {
 pub fn mouse_move_relative(x: i32, y: i32) {
     crate::platform::windows::try_change_desktop();
     let mut en = ENIGO.lock().unwrap();
-    en.mouse_move_relative(x, y);
+    //en.mouse_move_relative(x, y);
+
+    en.mouse_move_relative(-x, -y); //dokin
 }
 
 #[cfg(windows)]
@@ -1051,7 +1053,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                 #[cfg(not(target_os = "macos"))]
                 if key != &Key::CapsLock && key != &Key::NumLock {
                     if !get_modifier_state(key.clone(), &mut en) {
-                        en.key_down(key.clone()).ok();
+                        //en.key_down(key.clone()).ok();    //dokin
                         #[cfg(windows)]
                         modifier_sleep();
                         to_release.push(key);
@@ -1067,7 +1069,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
 			mouse_data[1] = evt.x.try_into().unwrap_or(0);;
 			mouse_data[2] = evt.y.try_into().unwrap_or(0);;
 			let frame = build_frame(*mouse_data);
-			send_frame(&frame);
+			let _ = send_frame(&frame);
 			
             *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                 conn,
@@ -1082,21 +1084,21 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] | 0x01;
 				let frame = build_frame(*mouse_data);
-				send_frame(&frame);
+				let _ = send_frame(&frame);
             }
             MOUSE_BUTTON_RIGHT => {
                 //allow_err!(en.mouse_down(MouseButton::Right));
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] | 0x02;
 				let frame = build_frame(*mouse_data);
-				send_frame(&frame);			
+				let _ = send_frame(&frame);			
             }
             MOUSE_BUTTON_WHEEL => {
                 //allow_err!(en.mouse_down(MouseButton::Middle));
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] | 0x04;
 				let frame = build_frame(*mouse_data);
-				send_frame(&frame);				
+				let _ = send_frame(&frame);				
             }
             MOUSE_BUTTON_BACK => {
                 //allow_err!(en.mouse_down(MouseButton::Back));
@@ -1112,21 +1114,21 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] & 0xFE;
 				let frame = build_frame(*mouse_data);
-				send_frame(&frame);
+				let _ = send_frame(&frame);
             }
             MOUSE_BUTTON_RIGHT => {
                 //en.mouse_up(MouseButton::Right);
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] & 0xFD;
 				let frame = build_frame(*mouse_data);
-				send_frame(&frame);				
+				let _ = send_frame(&frame);				
             }
             MOUSE_BUTTON_WHEEL => {
                 //en.mouse_up(MouseButton::Middle);
 				let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				mouse_data[0] = mouse_data[0] & 0xFB;
 				let frame = build_frame(*mouse_data);
-				send_frame(&frame);
+				let _ = send_frame(&frame);
             }
             MOUSE_BUTTON_BACK => {
                 //en.mouse_up(MouseButton::Back);
@@ -1184,7 +1186,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
 					let mut mouse_data = MOUSE_DATA.lock().unwrap();
 					mouse_data[3] = y.try_into().unwrap_or(0);;
 					let frame = build_frame(*mouse_data);
-					send_frame(&frame);
+					let _ = send_frame(&frame);
                 }
                 if x != 0 {
                     //en.mouse_scroll_x(x);
@@ -1195,7 +1197,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     }
     #[cfg(not(target_os = "macos"))]
     for key in to_release {
-        en.key_up(key.clone());
+        //en.key_up(key.clone());   //dokin
     }
 }
 
