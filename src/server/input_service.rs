@@ -448,7 +448,7 @@ lazy_static::lazy_static! {
         serialport::new("COM2", 115200)
             .timeout(Duration::from_millis(1000))
             .open()
-            .ok()
+            .expect("Failed to open serial port")
     );
 }
 // 全局鼠标状态
