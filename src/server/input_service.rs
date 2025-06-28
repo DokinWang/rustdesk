@@ -448,7 +448,7 @@ lazy_static::lazy_static! {
         serialport::new("COM2", 115200)
             .timeout(Duration::from_millis(1000))
             .open()
-            .expect("无法打开串口")
+            .ok()
     );
 }
 // 全局鼠标状态
@@ -917,12 +917,6 @@ fn get_last_input_cursor_pos() -> (i32, i32) {
 // check if mouse is moved by the controlled side user to make controlled side has higher mouse priority than remote.
 fn active_mouse_(conn: i32) -> bool {
 
-    // 打开串口 (配置可以提取到函数外)
-    let mut port = serialport::new("COM2", 115200)
-        .timeout(Duration::from_millis(1000))
-        .open()
-        .expect("无法打开串口");
-
     true
     /* this method is buggy (not working on macOS, making fast moving mouse event discarded here) and added latency (this is blocking way, must do in async way), so we disable it for now
     // out of time protection
@@ -1197,7 +1191,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     }
     #[cfg(not(target_os = "macos"))]
     for key in to_release {
-        //en.key_up(key.clone());   //dokin
+        // en.key_up(key.clone());   //dokin
     }
 }
 
