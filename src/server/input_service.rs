@@ -451,6 +451,17 @@ lazy_static::lazy_static! {
             .expect("Failed to open serial port")
     );
 }
+
+struct MouseLast {
+    x: i32,
+    y: i32,
+}
+
+// 上一次鼠标位置
+lazy_static! {
+    static ref MOUSE_LAST: Mutex<MouseLast> = Mutex::new(MouseLast { x: 0, y: 0 });
+}
+
 // 全局鼠标状态
 lazy_static::lazy_static! {
     static ref MOUSE_DATA: Mutex<[u8; 4]> = Mutex::new([0; 4]);
@@ -668,9 +679,7 @@ pub fn is_left_up(evt: &MouseEvent) -> bool {
 pub fn mouse_move_relative(x: i32, y: i32) {
     crate::platform::windows::try_change_desktop();
     let mut en = ENIGO.lock().unwrap();
-    //en.mouse_move_relative(x, y);
-
-    en.mouse_move_relative(-x, -y); //dokin
+    en.mouse_move_relative(x, y);
 }
 
 #[cfg(windows)]
@@ -1059,12 +1068,22 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     match evt_type {
     	MOUSE_TYPE_MOVE => {
             //en.mouse_move_to(evt.x, evt.y);
-			let mut mouse_data = MOUSE_DATA.lock().unwrap();
-			mouse_data[1] = evt.x.try_into().unwrap_or(0);;
-			mouse_data[2] = evt.y.try_into().unwrap_or(0);;
-			let frame = build_frame(*mouse_data);
-			let _ = send_frame(&frame);
-			
+            let mut mouse_last = MOUSE_LAST.lock().unwrap();
+            
+            if mouse_last.x != 0 && mouse_last.y != 0 {
+
+                let mut mouse_data = MOUSE_DATA.lock().unwrap();
+                mouse_data[1] = (evt.x - mouse_last.x) & 0xFF;
+                mouse_data[2] = (evt.y - mouse_last.y) & 0xFF;
+                let frame = build_frame(*mouse_data);
+                let _ = send_frame(&frame);
+
+                en.mouse_move_relative((evt.x - mouse_last.x) & 0xFF, (evt.y - mouse_last.y) & 0xFF);
+            }
+	
+            mouse_last.x = evt.x;
+            mouse_last.y = evt.y;
+
             *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                 conn,
                 time: get_time(),
