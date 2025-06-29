@@ -458,7 +458,7 @@ struct MouseLast {
 }
 
 // 上一次鼠标位置
-lazy_static! {
+lazy_static::lazy_static! {
     static ref MOUSE_LAST: Mutex<MouseLast> = Mutex::new(MouseLast { x: 0, y: 0 });
 }
 
@@ -1072,13 +1072,40 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             
             if mouse_last.x != 0 && mouse_last.y != 0 {
 
+                evt.y.try_into().unwrap_or(0);
+                let mut delta_x = (evt.x - mouse_last.x);
+                let mut delta_y = (evt.y - mouse_last.y);
                 let mut mouse_data = MOUSE_DATA.lock().unwrap();
-                mouse_data[1] = (evt.x - mouse_last.x) & 0xFF;
-                mouse_data[2] = (evt.y - mouse_last.y) & 0xFF;
+
+                if delta_x > 127 {
+                    delta_x = 127;
+                }
+                else if delta_x < -128 {
+                    delta_x = -128;
+                }
+
+                if delta_y > 127 {
+                    delta_y = 127;
+                }
+                else if delta_y < -128 {
+                    delta_y = -128;
+                }
+
+                if delta_x >= 0{
+                    mouse_data[1] = delta_x.try_into().unwrap_or(0);
+                }
+                else{
+                    mouse_data[1] = (delta_x + 256).try_into().unwrap_or(0);
+                }
+                if delta_y >= 0{
+                    mouse_data[2] = delta_y.try_into().unwrap_or(0);
+                }
+                else{
+                    mouse_data[2] = (delta_y + 256).try_into().unwrap_or(0);
+                }          
                 let frame = build_frame(*mouse_data);
                 let _ = send_frame(&frame);
-
-                en.mouse_move_relative((evt.x - mouse_last.x) & 0xFF, (evt.y - mouse_last.y) & 0xFF);
+                //en.mouse_move_relative(evt.x, evt.y);
             }
 	
             mouse_last.x = evt.x;
@@ -1115,9 +1142,17 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             }
             MOUSE_BUTTON_BACK => {
                 //allow_err!(en.mouse_down(MouseButton::Back));
+				let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				mouse_data[0] = mouse_data[0] | 0x08;
+				let frame = build_frame(*mouse_data);
+				let _ = send_frame(&frame);		                
             }
             MOUSE_BUTTON_FORWARD => {
                 //allow_err!(en.mouse_down(MouseButton::Forward));
+				let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				mouse_data[0] = mouse_data[0] | 0x10;
+				let frame = build_frame(*mouse_data);
+				let _ = send_frame(&frame);		                
             }
             _ => {}
         },
@@ -1145,9 +1180,17 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             }
             MOUSE_BUTTON_BACK => {
                 //en.mouse_up(MouseButton::Back);
+				let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				mouse_data[0] = mouse_data[0] & 0xF7;
+				let frame = build_frame(*mouse_data);
+				let _ = send_frame(&frame);                
             }
             MOUSE_BUTTON_FORWARD => {
                 //en.mouse_up(MouseButton::Forward);
+				let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				mouse_data[0] = mouse_data[0] & 0xEF;
+				let frame = build_frame(*mouse_data);
+				let _ = send_frame(&frame);                
             }
             _ => {}
         },
