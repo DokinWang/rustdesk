@@ -1081,15 +1081,14 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     }
     match evt_type {
     	MOUSE_TYPE_MOVE => {
-            //en.mouse_move_to(evt.x, evt.y);
+            // en.mouse_move_to(evt.x, evt.y);
             let mut mouse_last = MOUSE_LAST.lock().unwrap();
             
             if mouse_last.x != 0 && mouse_last.y != 0 {
 
-                evt.y.try_into().unwrap_or(0);
                 let mut delta_x = (evt.x - mouse_last.x);
                 let mut delta_y = (evt.y - mouse_last.y);
-                let mut mouse_data = MOUSE_DATA.lock().unwrap();
+            //     let mut mouse_data = MOUSE_DATA.lock().unwrap();
 
                 if delta_x > 127 {
                     delta_x = 127;
@@ -1105,21 +1104,21 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                     delta_y = -128;
                 }
 
-                if delta_x >= 0{
-                    mouse_data[1] = delta_x.try_into().unwrap_or(0);
-                }
-                else{
-                    mouse_data[1] = (delta_x + 256).try_into().unwrap_or(0);
-                }
-                if delta_y >= 0{
-                    mouse_data[2] = delta_y.try_into().unwrap_or(0);
-                }
-                else{
-                    mouse_data[2] = (delta_y + 256).try_into().unwrap_or(0);
-                }          
-                let frame = build_frame(*mouse_data);
-                let _ = send_frame(&frame);
-                //en.mouse_move_relative(evt.x, evt.y);
+            //     if delta_x >= 0{
+            //         mouse_data[1] = delta_x.try_into().unwrap_or(0);
+            //     }
+            //     else{
+            //         mouse_data[1] = (delta_x + 256).try_into().unwrap_or(0);
+            //     }
+            //     if delta_y >= 0{
+            //         mouse_data[2] = delta_y.try_into().unwrap_or(0);
+            //     }
+            //     else{
+            //         mouse_data[2] = (delta_y + 256).try_into().unwrap_or(0);
+            //     }          
+                // let frame = build_frame(*mouse_data);
+                // let _ = send_frame(&frame);
+                en.mouse_move_relative(delta_x, delta_y);
             }
 	
             mouse_last.x = evt.x;
@@ -1134,97 +1133,97 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
         }
         MOUSE_TYPE_DOWN => match buttons {
             MOUSE_BUTTON_LEFT => {
-                //allow_err!(en.mouse_down(MouseButton::Left));
-				let mut mouse_data = MOUSE_DATA.lock().unwrap();
-				mouse_data[0] = mouse_data[0] | 0x01;
-                mouse_data[1] = 0;
-                mouse_data[2] = 0;
-				let frame = build_frame(*mouse_data);
-				let _ = send_frame(&frame);
+                allow_err!(en.mouse_down(MouseButton::Left));
+				// let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				// mouse_data[0] = mouse_data[0] | 0x01;
+                // mouse_data[1] = 0;
+                // mouse_data[2] = 0;
+				// let frame = build_frame(*mouse_data);
+				// let _ = send_frame(&frame);
             }
             MOUSE_BUTTON_RIGHT => {
-                //allow_err!(en.mouse_down(MouseButton::Right));
-				let mut mouse_data = MOUSE_DATA.lock().unwrap();
-				mouse_data[0] = mouse_data[0] | 0x02;
-                mouse_data[1] = 0;
-                mouse_data[2] = 0;
-				let frame = build_frame(*mouse_data);
-				let _ = send_frame(&frame);			
+                allow_err!(en.mouse_down(MouseButton::Right));
+				// let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				// mouse_data[0] = mouse_data[0] | 0x02;
+                // mouse_data[1] = 0;
+                // mouse_data[2] = 0;
+				// let frame = build_frame(*mouse_data);
+				// let _ = send_frame(&frame);			
             }
             MOUSE_BUTTON_WHEEL => {
-                //allow_err!(en.mouse_down(MouseButton::Middle));
-				let mut mouse_data = MOUSE_DATA.lock().unwrap();
-				mouse_data[0] = mouse_data[0] | 0x04;
-                mouse_data[1] = 0;
-                mouse_data[2] = 0;
-				let frame = build_frame(*mouse_data);
-				let _ = send_frame(&frame);				
+                allow_err!(en.mouse_down(MouseButton::Middle));
+				// let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				// mouse_data[0] = mouse_data[0] | 0x04;
+                // mouse_data[1] = 0;
+                // mouse_data[2] = 0;
+				// let frame = build_frame(*mouse_data);
+				// let _ = send_frame(&frame);				
             }
             MOUSE_BUTTON_BACK => {
-                //allow_err!(en.mouse_down(MouseButton::Back));
-				let mut mouse_data = MOUSE_DATA.lock().unwrap();
-				mouse_data[0] = mouse_data[0] | 0x08;
-                mouse_data[1] = 0;
-                mouse_data[2] = 0;
-				let frame = build_frame(*mouse_data);
-				let _ = send_frame(&frame);		                
+                allow_err!(en.mouse_down(MouseButton::Back));
+				// let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				// mouse_data[0] = mouse_data[0] | 0x08;
+                // mouse_data[1] = 0;
+                // mouse_data[2] = 0;
+				// let frame = build_frame(*mouse_data);
+				// let _ = send_frame(&frame);		                
             }
             MOUSE_BUTTON_FORWARD => {
-                //allow_err!(en.mouse_down(MouseButton::Forward));
-				let mut mouse_data = MOUSE_DATA.lock().unwrap();
-				mouse_data[0] = mouse_data[0] | 0x10;
-                mouse_data[1] = 0;
-                mouse_data[2] = 0;
-				let frame = build_frame(*mouse_data);
-				let _ = send_frame(&frame);		                
+                allow_err!(en.mouse_down(MouseButton::Forward));
+				// let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				// mouse_data[0] = mouse_data[0] | 0x10;
+                // mouse_data[1] = 0;
+                // mouse_data[2] = 0;
+				// let frame = build_frame(*mouse_data);
+				// let _ = send_frame(&frame);		                
             }
             _ => {}
         },
         MOUSE_TYPE_UP => match buttons {
             MOUSE_BUTTON_LEFT => {
-                //en.mouse_up(MouseButton::Left);
-				let mut mouse_data = MOUSE_DATA.lock().unwrap();
-				mouse_data[0] = mouse_data[0] & 0xFE;
-                mouse_data[1] = 0;
-                mouse_data[2] = 0;
-				let frame = build_frame(*mouse_data);
-				let _ = send_frame(&frame);
+                en.mouse_up(MouseButton::Left);
+			// 	let mut mouse_data = MOUSE_DATA.lock().unwrap();
+			// 	mouse_data[0] = mouse_data[0] & 0xFE;
+            //     mouse_data[1] = 0;
+            //     mouse_data[2] = 0;
+			// 	let frame = build_frame(*mouse_data);
+			// 	let _ = send_frame(&frame);
             }
             MOUSE_BUTTON_RIGHT => {
-                //en.mouse_up(MouseButton::Right);
-				let mut mouse_data = MOUSE_DATA.lock().unwrap();
-				mouse_data[0] = mouse_data[0] & 0xFD;
-                mouse_data[1] = 0;
-                mouse_data[2] = 0;
-				let frame = build_frame(*mouse_data);
-				let _ = send_frame(&frame);				
+                en.mouse_up(MouseButton::Right);
+				// let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				// mouse_data[0] = mouse_data[0] & 0xFD;
+                // mouse_data[1] = 0;
+                // mouse_data[2] = 0;
+				// let frame = build_frame(*mouse_data);
+				// let _ = send_frame(&frame);				
             }
             MOUSE_BUTTON_WHEEL => {
-                //en.mouse_up(MouseButton::Middle);
-				let mut mouse_data = MOUSE_DATA.lock().unwrap();
-				mouse_data[0] = mouse_data[0] & 0xFB;
-                mouse_data[1] = 0;
-                mouse_data[2] = 0;
-				let frame = build_frame(*mouse_data);
-				let _ = send_frame(&frame);
+                en.mouse_up(MouseButton::Middle);
+				// let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				// mouse_data[0] = mouse_data[0] & 0xFB;
+                // mouse_data[1] = 0;
+                // mouse_data[2] = 0;
+				// let frame = build_frame(*mouse_data);
+				// let _ = send_frame(&frame);
             }
             MOUSE_BUTTON_BACK => {
-                //en.mouse_up(MouseButton::Back);
-				let mut mouse_data = MOUSE_DATA.lock().unwrap();
-				mouse_data[0] = mouse_data[0] & 0xF7;
-                mouse_data[1] = 0;
-                mouse_data[2] = 0;
-				let frame = build_frame(*mouse_data);
-				let _ = send_frame(&frame);                
+                en.mouse_up(MouseButton::Back);
+				// let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				// mouse_data[0] = mouse_data[0] & 0xF7;
+                // mouse_data[1] = 0;
+                // mouse_data[2] = 0;
+				// let frame = build_frame(*mouse_data);
+				// let _ = send_frame(&frame);                
             }
             MOUSE_BUTTON_FORWARD => {
-                //en.mouse_up(MouseButton::Forward);
-				let mut mouse_data = MOUSE_DATA.lock().unwrap();
-				mouse_data[0] = mouse_data[0] & 0xEF;
-                mouse_data[1] = 0;
-                mouse_data[2] = 0;
-				let frame = build_frame(*mouse_data);
-				let _ = send_frame(&frame);                
+                en.mouse_up(MouseButton::Forward);
+				// let mut mouse_data = MOUSE_DATA.lock().unwrap();
+				// mouse_data[0] = mouse_data[0] & 0xEF;
+                // mouse_data[1] = 0;
+                // mouse_data[2] = 0;
+				// let frame = build_frame(*mouse_data);
+				// let _ = send_frame(&frame);                
             }
             _ => {}
         },
@@ -1272,25 +1271,25 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             #[cfg(not(target_os = "macos"))]
             {
                 if y != 0 {
-                    //en.mouse_scroll_y(y);
-					let mut mouse_data = MOUSE_DATA.lock().unwrap();
-                    if y >= 0 && y < 128 {
-                        mouse_data[3] = y.try_into().unwrap_or(0);
-                    }
-                    else if y >= -128 && y < 0 {
-                        mouse_data[3] = (y+256).try_into().unwrap_or(0);
-                    }
-                    else{
-                        mouse_data[3] = 0;
-                    }
-                    mouse_data[1] = 0;
-                    mouse_data[2] = 0;                    
+                    en.mouse_scroll_y(y);
+					// let mut mouse_data = MOUSE_DATA.lock().unwrap();
+                    // if y >= 0 && y < 128 {
+                    //     mouse_data[3] = y.try_into().unwrap_or(0);
+                    // }
+                    // else if y >= -128 && y < 0 {
+                    //     mouse_data[3] = (y+256).try_into().unwrap_or(0);
+                    // }
+                    // else{
+                    //     mouse_data[3] = 0;
+                    // }
+                    // mouse_data[1] = 0;
+                    // mouse_data[2] = 0;                    
 					    
-					let frame = build_frame(*mouse_data);
-					let _ = send_frame(&frame);
+					// let frame = build_frame(*mouse_data);
+					// let _ = send_frame(&frame);
                 }
                 if x != 0 {
-                    //en.mouse_scroll_x(x);
+                    en.mouse_scroll_x(x);
                 }
             }
         }
@@ -1298,7 +1297,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     }
     #[cfg(not(target_os = "macos"))]
     for key in to_release {
-        // en.key_up(key.clone());   //dokin
+        en.key_up(key.clone());   //dokin
     }
 }
 
