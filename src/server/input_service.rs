@@ -1081,28 +1081,38 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     }
     match evt_type {
     	MOUSE_TYPE_MOVE => {
-            // en.mouse_move_to(evt.x, evt.y);
-            let mut mouse_last = MOUSE_LAST.lock().unwrap();
-            
-            if mouse_last.x != 0 && mouse_last.y != 0 {
 
-                let mut delta_x = (evt.x - mouse_last.x);
-                let mut delta_y = (evt.y - mouse_last.y);
+            let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
+            if x == INVALID_CURSOR_POS || y == INVALID_CURSOR_POS {
+                return ;
+            }
+            let mut delta_x = (evt.x - x);
+            let mut delta_y = (evt.y - y);
+
+            en.mouse_move_relative(delta_x, delta_y);
+
+            // en.mouse_move_to(evt.x, evt.y);
+            // let mut mouse_last = MOUSE_LAST.lock().unwrap();
+            
+            // if mouse_last.x != 0 && mouse_last.y != 0 {
+
+            //     let mut delta_x = (evt.x - mouse_last.x);
+            //     let mut delta_y = (evt.y - mouse_last.y);
             //     let mut mouse_data = MOUSE_DATA.lock().unwrap();
 
-                if delta_x > 127 {
-                    delta_x = 127;
-                }
-                else if delta_x < -128 {
-                    delta_x = -128;
-                }
+                // if delta_x > 127 {
+                //     delta_x = 127;
+                // }
+                // else if delta_x < -128 {
+                //     delta_x = -128;
+                // }
 
-                if delta_y > 127 {
-                    delta_y = 127;
-                }
-                else if delta_y < -128 {
-                    delta_y = -128;
-                }
+                // if delta_y > 127 {
+                //     delta_y = 127;
+                // }
+                // else if delta_y < -128 {
+                //     delta_y = -128;
+                // }
 
             //     if delta_x >= 0{
             //         mouse_data[1] = delta_x.try_into().unwrap_or(0);
@@ -1118,11 +1128,11 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             //     }          
                 // let frame = build_frame(*mouse_data);
                 // let _ = send_frame(&frame);
-                en.mouse_move_relative(delta_x, delta_y);
-            }
+                // en.mouse_move_relative(delta_x, delta_y);
+            // }
 	
-            mouse_last.x = evt.x;
-            mouse_last.y = evt.y;
+            // mouse_last.x = evt.x;
+            // mouse_last.y = evt.y;
 
             *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                 conn,
