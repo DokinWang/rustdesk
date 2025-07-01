@@ -1045,7 +1045,7 @@ pub fn send_frame(frame: &[u8]) -> io::Result<()> {
     Ok(())
 }
 
-pub fn get_cursor_pos() -> Option<(i32, i32)> {
+pub fn get_cursor_pos_dokin() -> Option<(i32, i32)> {
     use winapi::shared::windef::POINT;
     use winapi::um::winuser::GetCursorPos;
 
@@ -1096,63 +1096,25 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             }
         }
     }
+
+
     match evt_type {
     	MOUSE_TYPE_MOVE => {
+            let s = get_cursor_pos_dokin();
+            match s {
+                Some((x, y)) => {
+                    let mut delta_x = (evt.x - x);
+                    let mut delta_y = (evt.y - y);
 
-            // let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
-            let s=get_cursor_pos();
-            let Some((x, y)) = s else { todo!() };
-            
-            let mut delta_x = (evt.x - x);
-            let mut delta_y = (evt.y - y);
-
-            en.mouse_move_relative(delta_x, delta_y);
-
-
-
-            // en.mouse_move_to(evt.x, evt.y);
-
-            // let mut mouse_last = MOUSE_LAST.lock().unwrap();
-            
-            // if mouse_last.x != 0 && mouse_last.y != 0 {
-
-            //     let mut delta_x = (evt.x - mouse_last.x);
-            //     let mut delta_y = (evt.y - mouse_last.y);
-            //     let mut mouse_data = MOUSE_DATA.lock().unwrap();
-
-                // if delta_x > 127 {
-                //     delta_x = 127;
-                // }
-                // else if delta_x < -128 {
-                //     delta_x = -128;
-                // }
-
-                // if delta_y > 127 {
-                //     delta_y = 127;
-                // }
-                // else if delta_y < -128 {
-                //     delta_y = -128;
-                // }
-
-            //     if delta_x >= 0{
-            //         mouse_data[1] = delta_x.try_into().unwrap_or(0);
-            //     }
-            //     else{
-            //         mouse_data[1] = (delta_x + 256).try_into().unwrap_or(0);
-            //     }
-            //     if delta_y >= 0{
-            //         mouse_data[2] = delta_y.try_into().unwrap_or(0);
-            //     }
-            //     else{
-            //         mouse_data[2] = (delta_y + 256).try_into().unwrap_or(0);
-            //     }          
-                // let frame = build_frame(*mouse_data);
-                // let _ = send_frame(&frame);
-                // en.mouse_move_relative(delta_x, delta_y);
-            // }
-	
-            // mouse_last.x = evt.x;
-            // mouse_last.y = evt.y;
+                    en.mouse_move_relative(delta_x, delta_y);                
+                    //log::info!("Cursor position: ({}, {})", x, y);
+                }
+                None => {
+                    // 处理无效光标位置
+                    en.mouse_move_relative(1, 1);  
+                    log::info!("Cursor position is not available");
+                }
+            }
 
             *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                 conn,
