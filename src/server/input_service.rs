@@ -1083,8 +1083,9 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     match evt_type {
     	MOUSE_TYPE_MOVE => {
 
-            let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
-            if x != INVALID_CURSOR_POS && y != INVALID_CURSOR_POS {
+            // let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
+
+            if let Some((x, y)) = crate::get_cursor_pos() {
                 let mut delta_x = (evt.x - x);
                 let mut delta_y = (evt.y - y);
 
