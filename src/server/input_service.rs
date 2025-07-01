@@ -356,7 +356,8 @@ fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
         return Ok(());
     }
 
-    if state.is_moved(x, y) {
+    // if state.is_moved(x, y) {
+    if true {
         let mut msg_out = Message::new();
         msg_out.set_cursor_position(CursorPosition {
             x,
