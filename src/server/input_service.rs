@@ -27,6 +27,9 @@ use std::{
 #[cfg(windows)]
 use winapi::um::winuser::WHEEL_DELTA;
 
+#[cfg(windows)]
+extern crate winapi;
+
 use std::convert::TryInto;
 use serialport;
 use std::env;
@@ -1042,6 +1045,19 @@ pub fn send_frame(frame: &[u8]) -> io::Result<()> {
     Ok(())
 }
 
+pub fn get_cursor_pos() -> Option<(i32, i32)> {
+    use winapi::shared::windef::POINT;
+    use winapi::um::winuser::GetCursorPos;
+
+    let mut pt = POINT { x: -1, y: -1 };
+    let ret = unsafe { GetCursorPos(&mut pt) };
+    if ret != 1 || pt.x == -1 && pt.y == -1 {
+        None
+    } else {
+        Some((pt.x, pt.y))
+    }
+}
+
 pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     if !active_mouse_(conn) {
         return;
@@ -1084,13 +1100,15 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     	MOUSE_TYPE_MOVE => {
 
             // let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
+            let s=get_cursor_pos();
+            let Some((x, y)) = s else { todo!() };
+            
+            let mut delta_x = (evt.x - x);
+            let mut delta_y = (evt.y - y);
 
-            if let Some((x, y)) = crate::get_cursor_pos() {
-                let mut delta_x = (evt.x - x);
-                let mut delta_y = (evt.y - y);
+            en.mouse_move_relative(delta_x, delta_y);
 
-                en.mouse_move_relative(delta_x, delta_y);
-            }
+
 
             // en.mouse_move_to(evt.x, evt.y);
 
