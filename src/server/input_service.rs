@@ -1083,15 +1083,15 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     	MOUSE_TYPE_MOVE => {
 
             let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
-            if x == INVALID_CURSOR_POS || y == INVALID_CURSOR_POS {
-                return ;
-            }
-            let mut delta_x = (evt.x - x);
-            let mut delta_y = (evt.y - y);
+            if x != INVALID_CURSOR_POS && y != INVALID_CURSOR_POS {
+                let mut delta_x = (evt.x - x);
+                let mut delta_y = (evt.y - y);
 
-            en.mouse_move_relative(delta_x, delta_y);
+                en.mouse_move_relative(delta_x, delta_y);
+            }
 
             // en.mouse_move_to(evt.x, evt.y);
+
             // let mut mouse_last = MOUSE_LAST.lock().unwrap();
             
             // if mouse_last.x != 0 && mouse_last.y != 0 {
