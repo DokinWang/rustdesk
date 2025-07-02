@@ -1100,19 +1100,24 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
 
     match evt_type {
     	MOUSE_TYPE_MOVE => {
+
+            log::info!("evt pos: ({}, {})", evt.x, evt.y);
+
             let s = get_cursor_pos_dokin();
             match s {
                 Some((x, y)) => {
                     let mut delta_x = (evt.x - x);
                     let mut delta_y = (evt.y - y);
 
+                    log::info!("Cursor pos: ({}, {})", x, y);
+                    log::info!("delta: ({}, {})", delta_x, delta_y);
+
                     en.mouse_move_relative(delta_x, delta_y);                
-                    //log::info!("Cursor position: ({}, {})", x, y);
                 }
                 None => {
+                    log::info!("Cursor position is not available");                    
                     // 处理无效光标位置
                     en.mouse_move_relative(1, 1);  
-                    log::info!("Cursor position is not available");
                 }
             }
 
@@ -1125,6 +1130,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
         }
         MOUSE_TYPE_DOWN => match buttons {
             MOUSE_BUTTON_LEFT => {
+                log::info!("MOUSE_BUTTON_LEFT down");
                 allow_err!(en.mouse_down(MouseButton::Left));
 				// let mut mouse_data = MOUSE_DATA.lock().unwrap();
 				// mouse_data[0] = mouse_data[0] | 0x01;
