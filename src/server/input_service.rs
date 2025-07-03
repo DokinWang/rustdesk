@@ -359,8 +359,7 @@ fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
         return Ok(());
     }
 
-    // if state.is_moved(x, y) {
-    if true {
+    if state.is_moved(x, y) {
         let mut msg_out = Message::new();
         msg_out.set_cursor_position(CursorPosition {
             x,
@@ -1109,24 +1108,42 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                     let mut delta_x = (evt.x - x);
                     let mut delta_y = (evt.y - y);
 
-                    log::info!("Cursor pos: ({}, {})", x, y);
-                    log::info!("delta: ({}, {})", delta_x, delta_y);
+                    // log::info!("Cursor pos: ({}, {})", x, y);
+                    // log::info!("delta: ({}, {})", delta_x, delta_y);
 
                     en.mouse_move_relative(delta_x, delta_y);                
                 }
                 None => {
-                    log::info!("Cursor position is not available");                    
+                    // log::info!("Cursor position is not available");                    
                     // 处理无效光标位置
-                    en.mouse_move_relative(1, 1);  
+                    // en.mouse_move_relative(1, 1);  
                 }
             }
 
-            *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
-                conn,
-                time: get_time(),
-                x: evt.x,
-                y: evt.y,
-            };
+            let c = get_cursor_pos_dokin();
+            match c {
+                Some((x, y)) => {
+                    *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
+                        conn,
+                        time: get_time(),
+                        x: evt.x,
+                        y: evt.y,
+                    };               
+                }
+                None => {
+                    log::info!("Cursor position is not available");                    
+                    // 处理无效光标位置
+                    // en.mouse_move_relative(1, 1);  
+                }
+            }
+
+
+            // *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
+            //     conn,
+            //     time: get_time(),
+            //     x: evt.x,
+            //     y: evt.y,
+            // };
         }
         MOUSE_TYPE_DOWN => match buttons {
             MOUSE_BUTTON_LEFT => {
