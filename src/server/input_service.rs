@@ -1116,6 +1116,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                         let step_y = remaining_y.signum() * remaining_y.abs().min(127);
                         
                         en.mouse_move_relative(step_x, step_y);
+                        std::thread::sleep(std::time::Duration::from_millis(5));
                         
                         remaining_x -= step_x;
                         remaining_y -= step_y;
