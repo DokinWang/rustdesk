@@ -1105,13 +1105,21 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             let s = get_cursor_pos_dokin();
             match s {
                 Some((x, y)) => {
-                    let mut delta_x = (evt.x - x);
-                    let mut delta_y = (evt.y - y);
+                    let delta_x = evt.x - x;
+                    let delta_y = evt.y - y;
 
-                    // log::info!("Cursor pos: ({}, {})", x, y);
-                    // log::info!("delta: ({}, {})", delta_x, delta_y);
+                    let mut remaining_x = delta_x;
+                    let mut remaining_y = delta_y;
 
-                    en.mouse_move_relative(delta_x, delta_y);                
+                    while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
+                        let step_x = remaining_x.signum() * remaining_x.abs().min(127);
+                        let step_y = remaining_y.signum() * remaining_y.abs().min(127);
+                        
+                        en.mouse_move_relative(step_x, step_y);
+                        
+                        remaining_x -= step_x;
+                        remaining_y -= step_y;
+                    }               
                 }
                 None => {
                     // log::info!("Cursor position is not available");                    
