@@ -335,7 +335,7 @@ pub fn new_cursor() -> ServiceTmpl<MouseCursorSub> {
 
 pub fn new_pos() -> GenericService {
     let svc = EmptyExtraFieldService::new(NAME_POS.to_owned(), false);
-    GenericService::repeat::<StatePos, _, _>(&svc.clone(), 33, run_pos);
+    GenericService::repeat::<StatePos, _, _>(&svc.clone(), 10, run_pos);
     svc.sp
 }
 
@@ -1099,9 +1099,6 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
 
     match evt_type {
     	MOUSE_TYPE_MOVE => {
-
-            log::info!("evt pos: ({}, {})", evt.x, evt.y);
-
             let s = get_cursor_pos_dokin();
             match s {
                 Some((x, y)) => {
@@ -1112,11 +1109,11 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                     let mut remaining_y = delta_y;
 
                     while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
-                        let step_x = remaining_x.signum() * remaining_x.abs().min(127);
-                        let step_y = remaining_y.signum() * remaining_y.abs().min(127);
+                        let step_x = remaining_x.signum() * remaining_x.abs().min(64);
+                        let step_y = remaining_y.signum() * remaining_y.abs().min(64);
                         
                         en.mouse_move_relative(step_x, step_y);
-                        std::thread::sleep(std::time::Duration::from_millis(5));
+                        std::thread::sleep(std::time::Duration::from_millis(3));
                         
                         remaining_x -= step_x;
                         remaining_y -= step_y;
