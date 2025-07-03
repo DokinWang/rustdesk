@@ -1122,12 +1122,12 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
 
             let c = get_cursor_pos_dokin();
             match c {
-                Some((x, y)) => {
+                Some((ax, ay)) => {
                     *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                         conn,
                         time: get_time(),
-                        x: evt.x,
-                        y: evt.y,
+                        x: ax,
+                        y: ay,
                     };               
                 }
                 None => {
