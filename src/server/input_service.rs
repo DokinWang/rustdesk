@@ -1108,40 +1108,40 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             match s {
                 Some((x, y)) => {
 
-                    // let delta_x = if evt.x > x {
-                    //     (evt.x - x).min(128) // 限制最大差值
-                    // } else {
-                    //     (x - evt.x).min(128) * -1
-                    // };
+                    let delta_x = if evt.x > x {
+                        (evt.x - x).min(127) // 限制最大差值
+                    } else {
+                        (x - evt.x).min(127) * -1
+                    };
 
-                    // let delta_y = if evt.y > y {
-                    //     (evt.y - y).min(128) // 限制最大差值
-                    // } else {
-                    //     (y - evt.y).min(128) * -1
-                    // };
+                    let delta_y = if evt.y > y {
+                        (evt.y - y).min(127) // 限制最大差值
+                    } else {
+                        (y - evt.y).min(127) * -1
+                    };
+                    serial_println!("evt({},{}),cur({},{}),del({},{})", evt.x, evt.y, x, y, delta_x, delta_y);
+                    en.mouse_move_relative(step_x, step_y);
 
-                    
+                    // let delta_x = evt.x - x;
+                    // let delta_y = evt.y - y;
 
-                    let delta_x = evt.x - x;
-                    let delta_y = evt.y - y;
+                    // let mut remaining_x = delta_x;
+                    // let mut remaining_y = delta_y;
+                    // let mut step = 0;
 
-                    let mut remaining_x = delta_x;
-                    let mut remaining_y = delta_y;
-                    let mut step = 0;
-
-                    while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
-                        let step_x = remaining_x.signum() * remaining_x.abs().min(16);
-                        let step_y = remaining_y.signum() * remaining_y.abs().min(16);
+                    // while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
+                    //     let step_x = remaining_x.signum() * remaining_x.abs().min(16);
+                    //     let step_y = remaining_y.signum() * remaining_y.abs().min(16);
                         
-                        en.mouse_move_relative(step_x, step_y);
-                        serial_println!("s{},evt({},{}),cur({},{}),del({},{})", step, evt.x, evt.y, x, y, delta_x, delta_y);
-                        step += 1;
+                    //     en.mouse_move_relative(step_x, step_y);
+                    //     serial_println!("s{},evt({},{}),cur({},{}),del({},{})", step, evt.x, evt.y, x, y, delta_x, delta_y);
+                    //     step += 1;
                         
-                        std::thread::sleep(std::time::Duration::from_millis(10));
+                    //     std::thread::sleep(std::time::Duration::from_millis(10));
                         
-                        remaining_x -= step_x;
-                        remaining_y -= step_y;
-                    }               
+                    //     remaining_x -= step_x;
+                    //     remaining_y -= step_y;
+                    // }               
                 }
                 None => {
                     serial_println!("cur pos invalid1");
