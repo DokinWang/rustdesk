@@ -335,7 +335,7 @@ pub fn new_cursor() -> ServiceTmpl<MouseCursorSub> {
 
 pub fn new_pos() -> GenericService {
     let svc = EmptyExtraFieldService::new(NAME_POS.to_owned(), false);
-    GenericService::repeat::<StatePos, _, _>(&svc.clone(), 10, run_pos);
+    GenericService::repeat::<StatePos, _, _>(&svc.clone(), 33, run_pos);
     svc.sp
 }
 
@@ -1102,21 +1102,36 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             let s = get_cursor_pos_dokin();
             match s {
                 Some((x, y)) => {
-                    let delta_x = evt.x - x;
-                    let delta_y = evt.y - y;
 
-                    let mut remaining_x = delta_x;
-                    let mut remaining_y = delta_y;
+                    let delta_x = if evt.x > x {
+                        (evt.x - x).min(128) // 限制最大差值
+                    } else {
+                        (x - evt.x).min(128) * -1
+                    };
 
-                    while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
-                        let step_x = remaining_x.signum() * remaining_x.abs().min(64);
-                        let step_y = remaining_y.signum() * remaining_y.abs().min(64);
+                    let delta_y = if evt.y > y {
+                        (evt.y - y).min(128) // 限制最大差值
+                    } else {
+                        (y - evt.y).min(128) * -1
+                    };
+
+                    en.mouse_move_relative(delta_x, delta_y);
+
+                    // let delta_x = evt.x - x;
+                    // let delta_y = evt.y - y;
+
+                    // let mut remaining_x = delta_x;
+                    // let mut remaining_y = delta_y;
+
+                    // while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
+                    //     let step_x = remaining_x.signum() * remaining_x.abs().min(64);
+                    //     let step_y = remaining_y.signum() * remaining_y.abs().min(64);
                         
-                        en.mouse_move_relative(step_x, step_y);
-                        std::thread::sleep(std::time::Duration::from_millis(3));
+                    //     en.mouse_move_relative(step_x, step_y);
+                    //     std::thread::sleep(std::time::Duration::from_millis(3));
                         
-                        remaining_x -= step_x;
-                        remaining_y -= step_y;
+                    //     remaining_x -= step_x;
+                    //     remaining_y -= step_y;
                     }               
                 }
                 None => {
