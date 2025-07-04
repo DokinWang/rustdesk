@@ -1120,7 +1120,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                         (y - evt.y).min(127) * -1
                     };
                     serial_println!("evt({},{}),cur({},{}),del({},{})", evt.x, evt.y, x, y, delta_x, delta_y);
-                    en.mouse_move_relative(step_x, step_y);
+                    en.mouse_move_relative(delta_x, delta_y);
 
                     // let delta_x = evt.x - x;
                     // let delta_y = evt.y - y;
