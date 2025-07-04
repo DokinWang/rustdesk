@@ -30,10 +30,17 @@ use winapi::um::winuser::WHEEL_DELTA;
 #[cfg(windows)]
 extern crate winapi;
 
-use std::convert::TryInto;
-use serialport;
-use std::env;
-use std::io::{self, Write};
+// use std::convert::TryInto;
+// use serialport;
+// use std::env;
+// use std::io::{self, Write};
+use crate::serial;
+
+use serialport::SerialPort;
+use std::fmt::{self, Write};
+use std::io;
+use std::sync::Mutex;
+
 
 const INVALID_CURSOR_POS: i32 = i32::MIN;
 const INVALID_DISPLAY_IDX: i32 = -1;
@@ -445,29 +452,21 @@ enum KeysDown {
     EnigoKey(u64),
 }
 
-// 全局串口变量
+
 // lazy_static::lazy_static! {
-//     static ref PORT: Mutex<Box<dyn serialport::SerialPort>> = Mutex::new(
+//     static ref PORT: Mutex<Box<dyn serialport::SerialPort>> = {
 //         let ports = serialport::available_ports().expect("无法获取串口列表");
-//         serialport::new(ports[0], 115200)
+//         if ports.is_empty() {
+//             panic!("没有可用的串口");
+//         }
+//         let port = serialport::new(&ports[0].port_name, 115200)
 //             .timeout(Duration::from_millis(1000))
 //             .open()
-//             .expect("Failed to open serial port")
-//     );
+//             .expect("Failed to open serial port");
+//         Mutex::new(port)
+//     };
 // }
-lazy_static::lazy_static! {
-    static ref PORT: Mutex<Box<dyn serialport::SerialPort>> = {
-        let ports = serialport::available_ports().expect("无法获取串口列表");
-        if ports.is_empty() {
-            panic!("没有可用的串口");
-        }
-        let port = serialport::new(&ports[0].port_name, 115200)
-            .timeout(Duration::from_millis(1000))
-            .open()
-            .expect("Failed to open serial port");
-        Mutex::new(port)
-    };
-}
+
 
 struct MouseLast {
     x: i32,
@@ -1027,22 +1026,22 @@ pub fn handle_pointer_(evt: &PointerDeviceEvent, conn: i32) {
     }
 }
 
-pub fn build_frame(custom_bytes: [u8; 4]) -> [u8; 6] {
-    let mut frame = [0u8; 6];
-    frame[0] = 0x5A; // 固定头字节
-    frame[1..5].copy_from_slice(&custom_bytes); // 设置第2-5字节
-    frame[5] = frame.iter().take(5).fold(0u8, |sum, &x| sum.wrapping_add(x)); // 计算校验和
-    frame
-}
+// pub fn build_frame(custom_bytes: [u8; 4]) -> [u8; 6] {
+//     let mut frame = [0u8; 6];
+//     frame[0] = 0x5A; // 固定头字节
+//     frame[1..5].copy_from_slice(&custom_bytes); // 设置第2-5字节
+//     frame[5] = frame.iter().take(5).fold(0u8, |sum, &x| sum.wrapping_add(x)); // 计算校验和
+//     frame
+// }
 
-/// 使用全局串口发送数据帧
-pub fn send_frame(frame: &[u8]) -> io::Result<()> {
-    let mut port = PORT.lock().unwrap();
-    port.write_all(frame)?;
-    port.flush()?;
-    //println!("已发送数据: {:02X?}", frame);
-    Ok(())
-}
+// /// 使用全局串口发送数据帧
+// pub fn send_frame(frame: &[u8]) -> io::Result<()> {
+//     let mut port = PORT.lock().unwrap();
+//     port.write_all(frame)?;
+//     port.flush()?;
+//     //println!("已发送数据: {:02X?}", frame);
+//     Ok(())
+// }
 
 pub fn get_cursor_pos_dokin() -> Option<(i32, i32)> {
     use winapi::shared::windef::POINT;
@@ -1096,6 +1095,12 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
         }
     }
 
+    // 定义局部宏简化调用（可选）
+    macro_rules! serial_println {
+        ($($arg:tt)*) => {
+            serial::serial_println(format_args!($($arg)*))
+        };
+    }
 
     match evt_type {
     	MOUSE_TYPE_MOVE => {
@@ -1115,6 +1120,8 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                         (y - evt.y).min(128) * -1
                     };
 
+                    serial_println!("evt({},{}), cur({},{}), del({},{})", evt.x, evt.y, x, y, delta_x, delta_y);
+
                     en.mouse_move_relative(delta_x, delta_y);
 
                     // let delta_x = evt.x - x;
@@ -1132,18 +1139,19 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                         
                     //     remaining_x -= step_x;
                     //     remaining_y -= step_y;
-                    }               
+                    // }               
                 }
                 None => {
-                    // log::info!("Cursor position is not available");                    
-                    // 处理无效光标位置
-                    // en.mouse_move_relative(1, 1);  
+                    serial_println!("cur pos invalid1");
                 }
             }
 
             let c = get_cursor_pos_dokin();
             match c {
                 Some((ax, ay)) => {
+
+                    serial_println!("after({},{})\r\n", ax, ay);
+
                     *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                         conn,
                         time: get_time(),
@@ -1152,19 +1160,12 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                     };               
                 }
                 None => {
-                    log::info!("Cursor position is not available");                    
+                    serial_println!("cur pos invalid2\r\n");
+                    // log::info!("Cursor position is not available");                    
                     // 处理无效光标位置
                     // en.mouse_move_relative(1, 1);  
                 }
             }
-
-
-            // *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
-            //     conn,
-            //     time: get_time(),
-            //     x: evt.x,
-            //     y: evt.y,
-            // };
         }
         MOUSE_TYPE_DOWN => match buttons {
             MOUSE_BUTTON_LEFT => {
