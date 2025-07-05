@@ -361,6 +361,18 @@ fn update_last_cursor_pos(x: i32, y: i32) {
 }
 
 fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
+
+    let c = get_cursor_pos_dokin();
+    match c {
+        Some((ax, ay)) => {
+
+            update_last_input_cursor_pos(ax, ay);               
+        }
+        None => {
+            update_last_input_cursor_pos(INVALID_CURSOR_POS, INVALID_CURSOR_POS);                     
+        }
+    }
+
     let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
     if x == INVALID_CURSOR_POS || y == INVALID_CURSOR_POS {
         return Ok(());
@@ -376,7 +388,7 @@ fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
         let exclude = {
             let now = get_time();
             let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
-            if now - lock.time < 300 {
+            if now - lock.time < 1000 {
                 lock.conn
             } else {
                 0
@@ -937,6 +949,13 @@ pub fn update_latest_input_cursor_time(conn: i32) {
 fn get_last_input_cursor_pos() -> (i32, i32) {
     let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
     (lock.x, lock.y)
+}
+
+#[inline]
+pub fn update_last_input_cursor_pos(x: i32, y: i32){
+    let mut lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
+    lock.x = x;
+    lock.y = y;
 }
 
 // check if mouse is moved by the controlled side user to make controlled side has higher mouse priority than remote.
