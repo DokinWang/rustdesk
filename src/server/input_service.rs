@@ -361,49 +361,6 @@ fn update_last_cursor_pos(x: i32, y: i32) {
 }
 
 fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
-
-    // 定义局部宏简化调用（可选）
-    macro_rules! serial_println {
-        ($($arg:tt)*) => {
-            serial::serial_println(format_args!($($arg)*))
-        };
-    }
-
-    let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
-    let s = get_cursor_pos_dokin();
-    
-    match s {
-        Some((x, y)) => {
-            update_last_cursor_pos(x, y);
-
-            
-            let delta_x = if lock.x > x {
-                (lock.x - x).min(127) // 限制最大差值
-            } else {
-                (x - lock.x).min(127) * -1
-            };
-
-            let delta_y = if lock.y > y {
-                (lock.y - y).min(127) // 限制最大差值
-            } else {
-                (y - lock.y).min(127) * -1
-            };
-            if delta_y != 0 && delta_y != 0{
-
-                let mut en = ENIGO.lock().unwrap();
-                en.mouse_move_relative(delta_x, delta_y);
-                serial_println!("dst({},{}), cur({},{}), del({},{})", lock.x, lock.y, x, y, delta_x, delta_y);
-                return Ok(());
-            }
-
-        }
-        None => {
-            // serial_println!("cur pos invalid1");
-        }
-    }
-
-    let c = get_cursor_pos_dokin();
-
     let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
     if x == INVALID_CURSOR_POS || y == INVALID_CURSOR_POS {
         return Ok(());
@@ -418,7 +375,7 @@ fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
         });
         let exclude = {
             let now = get_time();
-            // let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
+            let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
             if now - lock.time < 300 {
                 lock.conn
             } else {
@@ -567,9 +524,15 @@ pub fn try_start_record_cursor_pos() -> Option<thread::JoinHandle<()>> {
         return None;
     }
 
+    macro_rules! serial_println {
+        ($($arg:tt)*) => {
+            serial::serial_println(format_args!($($arg)*))
+        };
+    }
+
     RECORD_CURSOR_POS_RUNNING.store(true, Ordering::SeqCst);
     let handle = thread::spawn(|| {
-        let interval = time::Duration::from_millis(10);
+        let interval = time::Duration::from_millis(20);
         loop {
             if !RECORD_CURSOR_POS_RUNNING.load(Ordering::SeqCst) {
                 break;
@@ -578,7 +541,31 @@ pub fn try_start_record_cursor_pos() -> Option<thread::JoinHandle<()>> {
             let now = time::Instant::now();
             if let Some((x, y)) = crate::get_cursor_pos() {
                 update_last_cursor_pos(x, y);
+
+                let (_, (dstx, dsty)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
+
+                if x != INVALID_CURSOR_POS && y != INVALID_CURSOR_POS {
+   
+                    let delta_x = if dstx > x {
+                        (dstx - x).min(127) // 限制最大差值
+                    } else {
+                        (x - dstx).min(127) * -1
+                    };
+        
+                    let delta_y = if dsty > y {
+                        (dsty - y).min(127) // 限制最大差值
+                    } else {
+                        (y - dsty).min(127) * -1
+                    };
+                    if delta_y != 0 && delta_y != 0{
+        
+                        let mut en = ENIGO.lock().unwrap();
+                        en.mouse_move_relative(delta_x, delta_y);
+                        serial_println!("dst({},{}), cur({},{}), del({},{}\r\n)", dstx, dsty, x, y, delta_x, delta_y);
+                    }                    
+                }              
             }
+    
             let elapsed = now.elapsed();
             if elapsed < interval {
                 thread::sleep(interval - elapsed);
