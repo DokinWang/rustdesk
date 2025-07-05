@@ -532,7 +532,7 @@ pub fn try_start_record_cursor_pos() -> Option<thread::JoinHandle<()>> {
 
     RECORD_CURSOR_POS_RUNNING.store(true, Ordering::SeqCst);
     let handle = thread::spawn(|| {
-        let interval = time::Duration::from_millis(20);
+        let interval = time::Duration::from_millis(33);
         loop {
             if !RECORD_CURSOR_POS_RUNNING.load(Ordering::SeqCst) {
                 break;
@@ -541,28 +541,6 @@ pub fn try_start_record_cursor_pos() -> Option<thread::JoinHandle<()>> {
             let now = time::Instant::now();
             if let Some((x, y)) = crate::get_cursor_pos() {
                 update_last_cursor_pos(x, y);
-
-                let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
-
-                if x != INVALID_CURSOR_POS && y != INVALID_CURSOR_POS && lock.x != INVALID_CURSOR_POS && lock.y != INVALID_CURSOR_POS {
-   
-                    let delta_x = if lock.x > x {
-                        (lock.x - x).min(127) // 限制最大差值
-                    } else {
-                        (x - lock.x).min(127) * -1
-                    };
-        
-                    let delta_y = if lock.y > y {
-                        (lock.y - y).min(127) // 限制最大差值
-                    } else {
-                        (y - lock.y).min(127) * -1
-                    };
-                    if delta_y != 0 && delta_y != 0{
-        
-                        let mut en = ENIGO.lock().unwrap();
-                        en.mouse_move_relative(delta_x, delta_y);
-                        serial_println!("dst({},{}), cur({},{}), del({},{})\r\n", lock.x, lock.y, x, y, delta_x, delta_y);
-                    }                    
                 }              
             }
     
@@ -1135,6 +1113,35 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
 
     match evt_type {
     	MOUSE_TYPE_MOVE => {
+            
+            let mut lock = LATEST_SYS_CURSOR_POS.lock().unwrap();
+
+            let xx = evt.x - lock.x;
+            let yy = evt.y - lock.y;
+
+            if xx > 127 || xx < -128 || yy > 127 || yy < -128 {
+                en.mouse_move_to(evt.x, evt.y);
+                serial_println!("evt1({},{})\r\n", evt.x, evt.y);
+            }
+            else{
+                let delta_x = if evt.x > lock.x {
+                    (evt.x - lock.x).min(127) // 限制最大差值
+                } else {
+                    (lock.x - evt.x).min(127) * -1
+                };
+    
+                let delta_y = if evt.y >lock.y {
+                    (evt.y - lock.y).min(127) // 限制最大差值
+                } else {
+                    (lock.y - evt.y).min(127) * -1
+                };
+                if delta_y != 0 && delta_y != 0{
+    
+                    let mut en = ENIGO.lock().unwrap();
+                    en.mouse_move_relative(delta_x, delta_y);
+                    serial_println!("evt({},{}), cur({},{}), del({},{})\r\n", evt.x, evt.y, lock.x, lock.y, delta_x, delta_y);
+                }
+            }
 
             *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                 conn,
