@@ -1140,10 +1140,10 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                     let frame = build_frame(*mouse_data);
                     let _ = send_frame(&frame);
 
-                    let now = Instant::now();
-                    while now.elapsed() < Duration::from_millis(12) {
-                        std::thread::sleep(Duration::from_millis(1));
-                    }
+                    // let now = Instant::now();
+                    // while now.elapsed() < Duration::from_millis(12) {
+                    //     std::thread::sleep(Duration::from_millis(1));
+                    // }
 
                     /* 分段位移 */
                     // let delta_x = evt.x - x;
