@@ -540,8 +540,7 @@ pub fn try_start_record_cursor_pos() -> Option<thread::JoinHandle<()>> {
 
             let now = time::Instant::now();
             if let Some((x, y)) = crate::get_cursor_pos() {
-                update_last_cursor_pos(x, y);
-                }              
+                update_last_cursor_pos(x, y);          
             }
     
             let elapsed = now.elapsed();
