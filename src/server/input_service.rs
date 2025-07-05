@@ -342,7 +342,7 @@ pub fn new_cursor() -> ServiceTmpl<MouseCursorSub> {
 
 pub fn new_pos() -> GenericService {
     let svc = EmptyExtraFieldService::new(NAME_POS.to_owned(), false);
-    GenericService::repeat::<StatePos, _, _>(&svc.clone(), 33, run_pos);
+    GenericService::repeat::<StatePos, _, _>(&svc.clone(), 10, run_pos);
     svc.sp
 }
 
@@ -362,17 +362,6 @@ fn update_last_cursor_pos(x: i32, y: i32) {
 
 fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
 
-    let c = get_cursor_pos_dokin();
-    match c {
-        Some((ax, ay)) => {
-
-            update_last_input_cursor_pos(ax, ay);               
-        }
-        None => {
-            update_last_input_cursor_pos(INVALID_CURSOR_POS, INVALID_CURSOR_POS);                     
-        }
-    }
-
     let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
     if x == INVALID_CURSOR_POS || y == INVALID_CURSOR_POS {
         return Ok(());
@@ -388,7 +377,7 @@ fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
         let exclude = {
             let now = get_time();
             let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
-            if now - lock.time < 1000 {
+            if now - lock.time < 300 {
                 lock.conn
             } else {
                 0
@@ -538,7 +527,7 @@ pub fn try_start_record_cursor_pos() -> Option<thread::JoinHandle<()>> {
 
     RECORD_CURSOR_POS_RUNNING.store(true, Ordering::SeqCst);
     let handle = thread::spawn(|| {
-        let interval = time::Duration::from_millis(33);
+        let interval = time::Duration::from_millis(10);
         loop {
             if !RECORD_CURSOR_POS_RUNNING.load(Ordering::SeqCst) {
                 break;
@@ -951,12 +940,6 @@ fn get_last_input_cursor_pos() -> (i32, i32) {
     (lock.x, lock.y)
 }
 
-#[inline]
-pub fn update_last_input_cursor_pos(x: i32, y: i32){
-    let mut lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
-    lock.x = x;
-    lock.y = y;
-}
 
 // check if mouse is moved by the controlled side user to make controlled side has higher mouse priority than remote.
 fn active_mouse_(conn: i32) -> bool {
@@ -1127,86 +1110,76 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
             match s {
                 Some((x, y)) => {
 
-                    let delta_x = if evt.x > x {
-                        (evt.x - x).min(127) // 限制最大差值
-                    } else {
-                        (x - evt.x).min(127) * -1
-                    };
+                    // let delta_x = if evt.x > x {
+                    //     (evt.x - x).min(127) // 限制最大差值
+                    // } else {
+                    //     (x - evt.x).min(127) * -1
+                    // };
 
-                    let delta_y = if evt.y > y {
-                        (evt.y - y).min(127) // 限制最大差值
-                    } else {
-                        (y - evt.y).min(127) * -1
-                    };
+                    // let delta_y = if evt.y > y {
+                    //     (evt.y - y).min(127) // 限制最大差值
+                    // } else {
+                    //     (y - evt.y).min(127) * -1
+                    // };
 
                     // serial_println!("evt({},{}), cur({},{}), del({},{})", evt.x, evt.y, x, y, delta_x, delta_y);
                     // en.mouse_move_relative(delta_x, delta_y);
 
                     /* STM32控制 */
-                    let mut mouse_data = MOUSE_DATA.lock().unwrap();
-                    if delta_x >= 0{
-                        mouse_data[1] = delta_x.try_into().unwrap_or(0);
-                    }
-                    else{
-                        mouse_data[1] = (delta_x + 256).try_into().unwrap_or(0);
-                    }
-                    if delta_y >= 0{
-                        mouse_data[2] = delta_y.try_into().unwrap_or(0);
-                    }
-                    else{
-                        mouse_data[2] = (delta_y + 256).try_into().unwrap_or(0);
-                    }          
-                    let frame = build_frame(*mouse_data);
-                    let _ = send_frame(&frame);
-
-                    // let now = Instant::now();
-                    // while now.elapsed() < Duration::from_millis(12) {
-                    //     std::thread::sleep(Duration::from_millis(1));
+                    // let mut mouse_data = MOUSE_DATA.lock().unwrap();
+                    // if delta_x >= 0{
+                    //     mouse_data[1] = delta_x.try_into().unwrap_or(0);
                     // }
+                    // else{
+                    //     mouse_data[1] = (delta_x + 256).try_into().unwrap_or(0);
+                    // }
+                    // if delta_y >= 0{
+                    //     mouse_data[2] = delta_y.try_into().unwrap_or(0);
+                    // }
+                    // else{
+                    //     mouse_data[2] = (delta_y + 256).try_into().unwrap_or(0);
+                    // }          
+                    // let frame = build_frame(*mouse_data);
+                    // let _ = send_frame(&frame);
+
 
                     /* 分段位移 */
-                    // let delta_x = evt.x - x;
-                    // let delta_y = evt.y - y;
+                    let delta_x = evt.x - x;
+                    let delta_y = evt.y - y;
 
-                    // let mut remaining_x = delta_x;
-                    // let mut remaining_y = delta_y;
+                    let mut remaining_x = delta_x;
+                    let mut remaining_y = delta_y;
+                    let mut step = 0;
 
-                    // while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
-                    //     let step_x = remaining_x.signum() * remaining_x.abs().min(64);
-                    //     let step_y = remaining_y.signum() * remaining_y.abs().min(64);
+                    while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
+                        let step_x = remaining_x.signum() * remaining_x.abs().min(64);
+                        let step_y = remaining_y.signum() * remaining_y.abs().min(64);
+                        step += 1;
                         
-                    //     en.mouse_move_relative(step_x, step_y);
-                    //     std::thread::sleep(std::time::Duration::from_millis(3));
-                        
-                    //     remaining_x -= step_x;
-                    //     remaining_y -= step_y;
-                    // }               
+                        en.mouse_move_relative(step_x, step_y);
+                        serial_println!("s[{}], evt({},{}), cur({},{}), del({},{})\r\n", step, evt.x, evt.y, x, y, delta_x, delta_y);
+                        remaining_x -= step_x;
+                        remaining_y -= step_y;
+                        // if remaining_x.abs() > 0 || remaining_y.abs() > 0 {
+                        //     std::thread::sleep(std::time::Duration::from_millis(3));
+                        // }
+
+                        if let Some((x, y)) = get_cursor_pos_dokin() {
+                            update_last_cursor_pos(x, y);
+                        }
+                    }
                 }
                 None => {
                     // serial_println!("cur pos invalid1");
                 }
             }
+            *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
+                conn,
+                time: get_time(),
+                x: evt.x,
+                y: evt.y,
+            };
 
-            let c = get_cursor_pos_dokin();
-            match c {
-                Some((ax, ay)) => {
-
-                    // serial_println!("after({},{})\r\n", ax, ay);
-
-                    *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
-                        conn,
-                        time: get_time(),
-                        x: ax,
-                        y: ay,
-                    };               
-                }
-                None => {
-                    // serial_println!("cur pos invalid2\r\n");
-                    // log::info!("Cursor position is not available");                    
-                    // 处理无效光标位置
-                    // en.mouse_move_relative(1, 1);  
-                }
-            }
         }
         MOUSE_TYPE_DOWN => match buttons {
             MOUSE_BUTTON_LEFT => {
