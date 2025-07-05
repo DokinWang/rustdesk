@@ -1113,32 +1113,32 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     match evt_type {
     	MOUSE_TYPE_MOVE => {
             
-            let mut lock = LATEST_SYS_CURSOR_POS.lock().unwrap();
+            let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
 
-            let xx = evt.x - lock.x;
-            let yy = evt.y - lock.y;
+            let xx = evt.x - x;
+            let yy = evt.y - y;
 
             if xx > 127 || xx < -128 || yy > 127 || yy < -128 {
                 en.mouse_move_to(evt.x, evt.y);
                 serial_println!("evt1({},{})\r\n", evt.x, evt.y);
             }
             else{
-                let delta_x = if evt.x > lock.x {
-                    (evt.x - lock.x).min(127) // 限制最大差值
+                let delta_x = if evt.x > x {
+                    (evt.x - x).min(127) // 限制最大差值
                 } else {
-                    (lock.x - evt.x).min(127) * -1
+                    (x - evt.x).min(127) * -1
                 };
     
-                let delta_y = if evt.y >lock.y {
-                    (evt.y - lock.y).min(127) // 限制最大差值
+                let delta_y = if evt.y > y {
+                    (evt.y - y).min(127) // 限制最大差值
                 } else {
-                    (lock.y - evt.y).min(127) * -1
+                    (y - evt.y).min(127) * -1
                 };
                 if delta_y != 0 && delta_y != 0{
     
                     let mut en = ENIGO.lock().unwrap();
                     en.mouse_move_relative(delta_x, delta_y);
-                    serial_println!("evt({},{}), cur({},{}), del({},{})\r\n", evt.x, evt.y, lock.x, lock.y, delta_x, delta_y);
+                    serial_println!("evt({},{}), cur({},{}), del({},{})\r\n", evt.x, evt.y, x, y, delta_x, delta_y);
                 }
             }
 
