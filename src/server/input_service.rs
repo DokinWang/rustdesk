@@ -362,6 +362,45 @@ fn update_last_cursor_pos(x: i32, y: i32) {
 
 fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
 
+    // 定义局部宏简化调用（可选）
+    macro_rules! serial_println {
+        ($($arg:tt)*) => {
+            serial::serial_println(format_args!($($arg)*))
+        };
+    }
+
+    let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
+    let s = get_cursor_pos_dokin();
+    
+    match s {
+        Some((x, y)) => {
+            update_last_cursor_pos(x, y);
+
+            let mut en = ENIGO.lock().unwrap();
+            let delta_x = if lock.x > x {
+                (lock.x - x).min(127) // 限制最大差值
+            } else {
+                (x - lock.x).min(127) * -1
+            };
+
+            let delta_y = if lock.y > y {
+                (lock.y - y).min(127) // 限制最大差值
+            } else {
+                (y - lock.y).min(127) * -1
+            };
+            if delta_y != 0 && delta_y != 0{
+                en.mouse_move_relative(delta_x, delta_y);
+                serial_println!("dst({},{}), cur({},{}), del({},{})", lock.x, lock.y, x, y, delta_x, delta_y);
+            }
+
+        }
+        None => {
+            // serial_println!("cur pos invalid1");
+        }
+    }
+
+    let c = get_cursor_pos_dokin();
+
     let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
     if x == INVALID_CURSOR_POS || y == INVALID_CURSOR_POS {
         return Ok(());
@@ -376,8 +415,8 @@ fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
         });
         let exclude = {
             let now = get_time();
-            let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
-            if now - lock.time < 1 {
+            // let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
+            if now - lock.time < 300 {
                 lock.conn
             } else {
                 0
@@ -1106,79 +1145,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
 
     match evt_type {
     	MOUSE_TYPE_MOVE => {
-            let s = get_cursor_pos_dokin();
-            match s {
-                Some((x, y)) => {
 
-                    // let delta_x = if evt.x > x {
-                    //     (evt.x - x).min(127) // 限制最大差值
-                    // } else {
-                    //     (x - evt.x).min(127) * -1
-                    // };
-
-                    // let delta_y = if evt.y > y {
-                    //     (evt.y - y).min(127) // 限制最大差值
-                    // } else {
-                    //     (y - evt.y).min(127) * -1
-                    // };
-
-                    // serial_println!("evt({},{}), cur({},{}), del({},{})", evt.x, evt.y, x, y, delta_x, delta_y);
-                    // en.mouse_move_relative(delta_x, delta_y);
-
-                    /* STM32控制 */
-                    // let mut mouse_data = MOUSE_DATA.lock().unwrap();
-                    // if delta_x >= 0{
-                    //     mouse_data[1] = delta_x.try_into().unwrap_or(0);
-                    // }
-                    // else{
-                    //     mouse_data[1] = (delta_x + 256).try_into().unwrap_or(0);
-                    // }
-                    // if delta_y >= 0{
-                    //     mouse_data[2] = delta_y.try_into().unwrap_or(0);
-                    // }
-                    // else{
-                    //     mouse_data[2] = (delta_y + 256).try_into().unwrap_or(0);
-                    // }          
-                    // let frame = build_frame(*mouse_data);
-                    // let _ = send_frame(&frame);
-
-
-                    
-                    let delta_x = evt.x - x;
-                    let delta_y = evt.y - y;
-
-                    // if delta_x > 127 || delta_x < -128 || delta_y > 127 || delta_y < -128 {
-                    //     en.mouse_move_to(evt.x, evt.y);
-                    // }
-                    // else    /* 分段位移 */
-                    // {
-                        let mut remaining_x = delta_x;
-                        let mut remaining_y = delta_y;
-                        let mut step = 0;
-
-                        while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
-                            let step_x = remaining_x.signum() * remaining_x.abs().min(127);
-                            let step_y = remaining_y.signum() * remaining_y.abs().min(127);
-                            step += 1;
-                            
-                            en.mouse_move_relative(step_x, step_y);
-                            serial_println!("s[{}], evt({},{}), cur({},{}), del({},{})\r\n", step, evt.x, evt.y, x, y, delta_x, delta_y);
-                            remaining_x -= step_x;
-                            remaining_y -= step_y;
-                            // if remaining_x.abs() > 0 || remaining_y.abs() > 0 {
-                            //     std::thread::sleep(std::time::Duration::from_millis(3));
-                            // }
-
-                            if let Some((x, y)) = get_cursor_pos_dokin() {
-                                update_last_cursor_pos(x, y);
-                            }
-                        }
-                    // }
-                }
-                None => {
-                    // serial_println!("cur pos invalid1");
-                }
-            }
             *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                 conn,
                 time: get_time(),
