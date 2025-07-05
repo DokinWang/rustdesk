@@ -377,7 +377,7 @@ fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
         let exclude = {
             let now = get_time();
             let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
-            if now - lock.time < 300 {
+            if now - lock.time < 1 {
                 lock.conn
             } else {
                 0
@@ -1143,31 +1143,37 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                     // let _ = send_frame(&frame);
 
 
-                    /* 分段位移 */
+                    
                     let delta_x = evt.x - x;
                     let delta_y = evt.y - y;
 
-                    let mut remaining_x = delta_x;
-                    let mut remaining_y = delta_y;
-                    let mut step = 0;
+                    // if delta_x > 127 || delta_x < -128 || delta_y > 127 || delta_y < -128 {
+                    //     en.mouse_move_to(evt.x, evt.y);
+                    // }
+                    // else    /* 分段位移 */
+                    // {
+                        let mut remaining_x = delta_x;
+                        let mut remaining_y = delta_y;
+                        let mut step = 0;
 
-                    while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
-                        let step_x = remaining_x.signum() * remaining_x.abs().min(64);
-                        let step_y = remaining_y.signum() * remaining_y.abs().min(64);
-                        step += 1;
-                        
-                        en.mouse_move_relative(step_x, step_y);
-                        serial_println!("s[{}], evt({},{}), cur({},{}), del({},{})\r\n", step, evt.x, evt.y, x, y, delta_x, delta_y);
-                        remaining_x -= step_x;
-                        remaining_y -= step_y;
-                        // if remaining_x.abs() > 0 || remaining_y.abs() > 0 {
-                        //     std::thread::sleep(std::time::Duration::from_millis(3));
-                        // }
+                        while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
+                            let step_x = remaining_x.signum() * remaining_x.abs().min(127);
+                            let step_y = remaining_y.signum() * remaining_y.abs().min(127);
+                            step += 1;
+                            
+                            en.mouse_move_relative(step_x, step_y);
+                            serial_println!("s[{}], evt({},{}), cur({},{}), del({},{})\r\n", step, evt.x, evt.y, x, y, delta_x, delta_y);
+                            remaining_x -= step_x;
+                            remaining_y -= step_y;
+                            // if remaining_x.abs() > 0 || remaining_y.abs() > 0 {
+                            //     std::thread::sleep(std::time::Duration::from_millis(3));
+                            // }
 
-                        if let Some((x, y)) = get_cursor_pos_dokin() {
-                            update_last_cursor_pos(x, y);
+                            if let Some((x, y)) = get_cursor_pos_dokin() {
+                                update_last_cursor_pos(x, y);
+                            }
                         }
-                    }
+                    // }
                 }
                 None => {
                     // serial_println!("cur pos invalid1");
