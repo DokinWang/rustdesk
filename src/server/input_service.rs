@@ -1134,7 +1134,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                 } else {
                     (y - evt.y).min(127) * -1
                 };
-                if delta_y != 0 && delta_y != 0{
+                if delta_x != 0 && delta_y != 0{
     
                     let mut en = ENIGO.lock().unwrap();
                     en.mouse_move_relative(delta_x, delta_y);
