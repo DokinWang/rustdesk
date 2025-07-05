@@ -1109,15 +1109,15 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                 Some((x, y)) => {
 
                     let delta_x = if evt.x > x {
-                        (evt.x - x).min(128) // 限制最大差值
+                        (evt.x - x).min(127) // 限制最大差值
                     } else {
-                        (x - evt.x).min(128) * -1
+                        (x - evt.x).min(127) * -1
                     };
 
                     let delta_y = if evt.y > y {
-                        (evt.y - y).min(128) // 限制最大差值
+                        (evt.y - y).min(127) // 限制最大差值
                     } else {
-                        (y - evt.y).min(128) * -1
+                        (y - evt.y).min(127) * -1
                     };
 
                     // serial_println!("evt({},{}), cur({},{}), del({},{})", evt.x, evt.y, x, y, delta_x, delta_y);
