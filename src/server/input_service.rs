@@ -406,24 +406,24 @@ fn run_pos(sp: EmptyExtraFieldService, state: &mut StatePos) -> ResultType<()> {
         return Ok(());
     }
 
-    if state.is_moved(x, y) {
-        let mut msg_out = Message::new();
-        msg_out.set_cursor_position(CursorPosition {
-            x,
-            y,
-            ..Default::default()
-        });
-        let exclude = {
-            let now = get_time();
-            // let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
-            if now - lock.time < 300 {
-                lock.conn
-            } else {
-                0
-            }
-        };
-        sp.send_without(msg_out, exclude);
-    }
+    // if state.is_moved(x, y) {
+    //     let mut msg_out = Message::new();
+    //     msg_out.set_cursor_position(CursorPosition {
+    //         x,
+    //         y,
+    //         ..Default::default()
+    //     });
+    //     let exclude = {
+    //         let now = get_time();
+    //         // let lock = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
+    //         if now - lock.time < 300 {
+    //             lock.conn
+    //         } else {
+    //             0
+    //         }
+    //     };
+    //     sp.send_without(msg_out, exclude);
+    // }
     state.cursor_pos = (x, y);
 
     sp.snapshot(|sps| {
