@@ -1093,7 +1093,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                 #[cfg(not(target_os = "macos"))]
                 if key != &Key::CapsLock && key != &Key::NumLock {
                     if !get_modifier_state(key.clone(), &mut en) {
-                        //en.key_down(key.clone()).ok();    //dokin
+                        en.key_down(key.clone()).ok();
                         #[cfg(windows)]
                         modifier_sleep();
                         to_release.push(key);
@@ -1112,35 +1112,36 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
 
     match evt_type {
     	MOUSE_TYPE_MOVE => {
-            
-            let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
+            en.mouse_move_to(evt.x, evt.y);
 
-            let xx = evt.x - x;
-            let yy = evt.y - y;
+            // let (_, (x, y)) = *LATEST_SYS_CURSOR_POS.lock().unwrap();
 
-            if xx > 127 || xx < -128 || yy > 127 || yy < -128 {
-                en.mouse_move_to(evt.x, evt.y);
-                serial_println!("evt1({},{})\r\n", evt.x, evt.y);
-            }
-            else{
-                let delta_x = if evt.x > x {
-                    (evt.x - x).min(127) // 限制最大差值
-                } else {
-                    (x - evt.x).min(127) * -1
-                };
+            // let xx = evt.x - x;
+            // let yy = evt.y - y;
+
+            // if xx > 127 || xx < -128 || yy > 127 || yy < -128 {
+            //     en.mouse_move_to(evt.x, evt.y);
+            //     serial_println!("evt1({},{})\r\n", evt.x, evt.y);
+            // }
+            // else{
+            //     let delta_x = if evt.x > x {
+            //         (evt.x - x).min(127) // 限制最大差值
+            //     } else {
+            //         (x - evt.x).min(127) * -1
+            //     };
     
-                let delta_y = if evt.y > y {
-                    (evt.y - y).min(127) // 限制最大差值
-                } else {
-                    (y - evt.y).min(127) * -1
-                };
-                if delta_x != 0 && delta_y != 0{
+            //     let delta_y = if evt.y > y {
+            //         (evt.y - y).min(127) // 限制最大差值
+            //     } else {
+            //         (y - evt.y).min(127) * -1
+            //     };
+            //     if delta_x != 0 && delta_y != 0{
     
-                    let mut en = ENIGO.lock().unwrap();
-                    en.mouse_move_relative(delta_x, delta_y);
-                    serial_println!("evt({},{}), cur({},{}), del({},{})\r\n", evt.x, evt.y, x, y, delta_x, delta_y);
-                }
-            }
+            //         let mut en = ENIGO.lock().unwrap();
+            //         en.mouse_move_relative(delta_x, delta_y);
+            //         serial_println!("evt({},{}), cur({},{}), del({},{})\r\n", evt.x, evt.y, x, y, delta_x, delta_y);
+            //     }
+            // }
 
             *LATEST_PEER_INPUT_CURSOR.lock().unwrap() = Input {
                 conn,
@@ -1317,7 +1318,7 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     }
     #[cfg(not(target_os = "macos"))]
     for key in to_release {
-        en.key_up(key.clone());   //dokin
+        en.key_up(key.clone());
     }
 }
 
