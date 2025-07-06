@@ -532,7 +532,7 @@ pub fn try_start_record_cursor_pos() -> Option<thread::JoinHandle<()>> {
 
     RECORD_CURSOR_POS_RUNNING.store(true, Ordering::SeqCst);
     let handle = thread::spawn(|| {
-        let interval = time::Duration::from_millis(33);
+        let interval = time::Duration::from_millis(10);
         loop {
             if !RECORD_CURSOR_POS_RUNNING.load(Ordering::SeqCst) {
                 break;
@@ -540,6 +540,36 @@ pub fn try_start_record_cursor_pos() -> Option<thread::JoinHandle<()>> {
 
             let now = time::Instant::now();
             if let Some((x, y)) = crate::get_cursor_pos() {
+
+                // let mut evt = LATEST_PEER_INPUT_CURSOR.lock().unwrap();
+                // let mut en = ENIGO.lock().unwrap();
+
+                // let xx = evt.x - x;
+                // let yy = evt.y - y;
+    
+                // if xx > 127 || xx < -128 || yy > 127 || yy < -128 {
+                // // if false{
+                //     en.mouse_move_to(evt.x, evt.y);
+                //     log::info!("!!!!evt1({},{})\r\n", evt.x, evt.y);
+                // }
+                // else{
+
+                //     let delta_x = if evt.x > x {
+                //         (evt.x - x).min(127) // 限制最大差值
+                //     } else {
+                //         (x - evt.x).min(128) * -1
+                //     };
+        
+                //     let delta_y = if evt.y > y {
+                //         (evt.y - y).min(127) // 限制最大差值
+                //     } else {
+                //         (y - evt.y).min(128) * -1
+                //     };
+                //     if delta_x != 0 || delta_y != 0{
+                //         en.mouse_move_relative(delta_x, delta_y);
+                //     }
+                // }
+
                 update_last_cursor_pos(x, y);          
             }
     
@@ -1104,11 +1134,11 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
     }
 
     // 定义局部宏简化调用（可选）
-    macro_rules! serial_println {
-        ($($arg:tt)*) => {
-            serial::serial_println(format_args!($($arg)*))
-        };
-    }
+    // macro_rules! serial_println {
+    //     ($($arg:tt)*) => {
+    //         serial::serial_println(format_args!($($arg)*))
+    //     };
+    // }
 
     match evt_type {
     	MOUSE_TYPE_MOVE => {
@@ -1121,32 +1151,49 @@ pub fn handle_mouse_(evt: &MouseEvent, conn: i32) {
                     let xx = evt.x - x;
                     let yy = evt.y - y;
         
-                    if xx > 127 || xx < -128 || yy > 127 || yy < -128 {
+                    // if xx > 127 || xx < -128 || yy > 127 || yy < -128 {
+                    if xx > 254 || xx < -254 || yy > 254 || yy < -254 {
+                    // if false{
                         en.mouse_move_to(evt.x, evt.y);
-                        serial_println!("evt1({},{})\r\n", evt.x, evt.y);
+                        log::info!("!!!!evt1({},{}, xy:({},{}))\r\n", evt.x, evt.y, xx, yy);
                     }
                     else{
-                        let delta_x = if evt.x > x {
-                            (evt.x - x).min(127) // 限制最大差值
-                        } else {
-                            (x - evt.x).min(127) * -1
-                        };
+
+                        // let delta_x = if evt.x > x {
+                        //     (evt.x - x).min(127) // 限制最大差值
+                        // } else {
+                        //     (x - evt.x).min(128) * -1
+                        // };
             
-                        let delta_y = if evt.y > y {
-                            (evt.y - y).min(127) // 限制最大差值
-                        } else {
-                            (y - evt.y).min(127) * -1
-                        };
-                        if delta_x != 0 || delta_y != 0{
-            
-                            let mut en = ENIGO.lock().unwrap();
-                            en.mouse_move_relative(delta_x, delta_y);
-                            serial_println!("evt({},{}), cur({},{}), del({},{})\r\n", evt.x, evt.y, x, y, delta_x, delta_y);
+                        // let delta_y = if evt.y > y {
+                        //     (evt.y - y).min(127) // 限制最大差值
+                        // } else {
+                        //     (y - evt.y).min(128) * -1
+                        // };
+                        // if delta_x != 0 || delta_y != 0{
+                        //     en.mouse_move_relative(delta_x, delta_y);
+                        // }
+
+
+                        let delta_x = evt.x - x;
+                        let delta_y = evt.y - y;    
+
+                        let mut remaining_x = delta_x;
+                        let mut remaining_y = delta_y;
+                        while remaining_x.abs() > 0 || remaining_y.abs() > 0 {
+                            let step_x = remaining_x.signum() * remaining_x.abs().min(127);
+                            let step_y = remaining_y.signum() * remaining_y.abs().min(127);
+                            
+                            en.mouse_move_relative(step_x, step_y);
+                            // log::info!("s[{}], evt({},{}), cur({},{}), del({},{})\r\n", step, evt.x, evt.y, x, y, delta_x, delta_y);
+                            remaining_x -= step_x;
+                            remaining_y -= step_y;
                         }
+
                     }
                 }
                 None => {
-                                     
+         
                 }
             }
 
